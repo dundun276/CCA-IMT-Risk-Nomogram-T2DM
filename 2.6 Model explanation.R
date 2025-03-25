@@ -61,9 +61,9 @@ dca_results_test <- perform_dca(selected_test_data, predicted_probs_test_all,
 #= SHAP Analysis =#
 #=================#
 # Data preprocessing
-x_xgboost <- selected_train_data[, c("Age", "BMI", "HDL", "LDL", "LAP", "Smoke", "Exercise")]
+x_xgboost <- selected_train_data[, c(features)]
 names(x_xgboost)[3] <- "HDL-C"
-names(x_xgboost)[4] <- "LDL-C"
+names(x_xgboost)[8] <- "LDL-C"
 x_xgboost[] <- lapply(x_xgboost, function(x) as.numeric(gsub("^\\s+|\\s+$", "", x))) # Remove spaces and convert to numeric
 x_xgboost <- as.matrix(x_xgboost)
 str(x_xgboost) # Check if it is a numeric matrix
@@ -103,13 +103,14 @@ sv_importance(shap_values, kind = "bar", fill = "#0080FF", show_numbers = TRUE) 
   theme_bw() +
   theme(axis.text.y = element_text(size = 14))
 
+variable <- c("Age", "Smoke", "HDL-C", "Exercise", "HbA1c", "BMI", "TyG", "LDL-C")
+theme_set(theme_bw())
 sv_dependence(shap_values,
-              v = c("Age", "BMI", "Smoke", "Exercise", "LAP", "LDL-C", "HDL-C")) + theme_bw()
+              v = variable)
 
 # Loop to plot SHAP interaction plots for each variable
 shap_interaction <- shapviz(model_xgboost, x_xgboost, interactions = TRUE)
-variables <- c("Age", "BMI", "HDL-C", "LDL-C", "LAP", "Smoke", "Exercise")
-for (var in variables) {
+for (var in variable) {
   p <- sv_dependence(shap_interaction, v = var, color_var = "auto") +
     theme_bw() +
     ggtitle(paste("SHAP Interaction Plot for", var))

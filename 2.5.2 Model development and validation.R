@@ -8,7 +8,7 @@ library(pROC)             # version 1.18.5
 
 # Data preprocessing function
 preprocess_data <- function(data) {
-  selected_data <- data[, c("Age","BMI","HDL","LDL","LAP","Smoke","Exercise","CCA_thicken")]
+  selected_data <- data[, c(features, "CCA_thicken")]
   selected_data$CCA_thicken <- as.numeric(selected_data$CCA_thicken) - 1
   return(selected_data)
   }
@@ -21,7 +21,7 @@ fit_and_plot_nomogram <- function(data) {
   label(data$HDL) <- "HDL-C"
   label(data$LDL) <- "LDL-C"
   
-  fit_model <- lrm(CCA_thicken ~ Age + BMI + HDL + LDL + LAP + Smoke + Exercise, 
+  fit_model <- lrm(CCA_thicken ~ Age + BMI + Smoke + Exercise + HbA1c + HDL + LDL + TyG + LDL, 
                    data = data, x = TRUE, y = TRUE)
   nomogram_model <- nomogram(fit_model, fun = plogis, funlabel = "Probability of Event")
   
@@ -50,7 +50,7 @@ plot_calibration <- function(predicted, actual) {
 
 # 1000 bootstrap calibrations
 bootstrap_calibration <- function(data, title) {
-  fit_bootstrap <- lrm(CCA_thicken ~ Age + BMI + HDL + LDL + LAP + Smoke + Exercise, 
+  fit_bootstrap <- lrm(CCA_thicken ~ Age + BMI + Smoke + Exercise + HbA1c + HDL + LDL + TyG + LDL, 
                        data = data, x = TRUE, y = TRUE)
   bootstrap_cal <- calibrate(fit_bootstrap, method = "boot", B = 1000, data = data, response = "CCA_thicken")
   
@@ -82,7 +82,8 @@ plot_roc_curves <- function(roc_curves, auc_values, title = "", features, colors
   }
   
   names(auc_values)[4]="HDL-C"
-  names(auc_values)[8]="LDL-C"
+  names(auc_values)[8]="TyG index"
+  names(auc_values)[9]="LDL-C"
   legend("bottomright", 
          legend = c(paste("Model AUC:", round(auc_values["model"], 4)), 
                     paste(names(auc_values)[-1], "AUC:", round(auc_values[-1], 4))),
@@ -111,9 +112,8 @@ CCA_bootstrap1000_test <- bootstrap_calibration(selected_test_data, "Validation 
 #==== ROC curves ===#
 #===================#
 # Set variables, colors, and line types
-features <- c("Age","Smoke","HDL","Exercise","BMI","LAP","LDL")
-colors <- c("#377eb8", "#f781bf", "#e377c2","#4daf4a" , "#2ca02c","#984ea3", "#9467bd")
-line_types <- c(2, 3, 2, 3, 2, 3, 2, 3)
+colors <- c("#377eb8", "#f781bf", "#e377c2","#4daf4a" , "#2ca02c","#984ea3", "#9467bd","#e41a1c")
+line_types <- c(2, 3, 2, 3, 2, 3, 2, 3, 2)
 
 # Training set ROC curves
 single_models <- list()

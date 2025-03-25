@@ -6,23 +6,24 @@ library(broom)      # version 1.0.7
 library(forestplot) # version 3.1.6
 
 # Fit the final model
-fit_final <- glm(as.formula(paste("CCA_thicken ~", paste(significant_vars, collapse = "+"))), 
+features <- c("Age", "Smoke", "HDL", "Exercise", "HbA1c", "BMI", "TyG", "LDL")
+fit_final <- glm(as.formula(paste("CCA_thicken ~", paste(features, collapse = "+"))), 
                    data = train_data, family = binomial())
 summary(fit_final)
 
 # Extract the final model variable table
 table_data_final <- tidy(fit_final, conf.int = TRUE) %>%
   mutate(
-    Variable = c("Intercept", "Age [years]", "BMI [kg/m^2]", "HDL-C [mmol/L]", "LDL-C [mmol/L]",
-                 "LAP", "Smoke=Yes", "Exercise=Yes"),
+    Variable = c("Intercept", "Age [years]", "Smoke=Yes", "HDL-C [mmol/L]", "Exercise=Yes", 
+                 "HbA1c[mmol/L]", "BMI [kg/m^2]", "TyG index", "LDL-C [mmol/L]"),
     Beta = round(estimate,3),
     OR = round(exp(estimate),2),
-    lower_CI=round(exp(conf.low), 2),
-    upper_CI=round(exp(conf.high), 2),
+    lower_CI = round(exp(conf.low), 2),
+    upper_CI = round(exp(conf.high), 2),
     OR_CI_95 = paste0(OR, "(", paste0(round(exp(conf.low), 2), "-", round(exp(conf.high), 2)), ")" ),
     p_value = ifelse(p.value < 0.001, "<0.001", round(p.value, 3))
     ) %>%
-  select(
+  dplyr::select(
     Variable,
     Beta,
     OR,
@@ -64,7 +65,7 @@ forestplot(
   mean = table_data_final$OR,         # Estimates (e.g., OR values)
   lower = table_data_final$lower_CI,  # Lower confidence interval
   upper = table_data_final$upper_CI,  # Upper confidence interval
-  is.summary = c(T, F, F, F, F, F, F, F, F),  # Rows to bold
+  is.summary = c(T, F, F, F, F, F, F, F, F, F),  # Rows to bold
   graph.pos = 3,                      # Graph position, placed in the third column
   xlab = "The estimates",             # X-axis label
   zero = 1,                           # Reference line position (usually 1)

@@ -7,7 +7,7 @@ library(dplyr)  # version 1.1.4
 library(caret)  # version 7.0-1
 
 # Exclude ID and Name columns from the analysis data
-analysis_data <- complete_data[, 2:50]
+analysis_data <- complete_data[, c(2:50)]
 View(analysis_data)
 
 # Split the dataset
@@ -32,7 +32,7 @@ numeric_vars <- train_data %>% select_if(is.numeric)
 categorical_vars <- train_data %>% select_if(is.factor)
 
 # Standardize numeric variables
-preProcValues <- preProcess(numeric_vars, method = c("center", "scale", "YeoJohnson", "nzv"))
+preProcValues <- preProcess(numeric_vars, method = c("YeoJohnson", "nzv", "center", "scale"))
 normalized_numeric_vars <- predict(preProcValues, numeric_vars)
 
 # Combine standardized numeric variables with original categorical variables
@@ -76,7 +76,7 @@ row.names(Coefficients)[Active.Index]
 # [4] "BMI"                        "CA19-9"                     "HbA1c"                     
 # [7] "HDL"                        "LDL"                        "GFR"                       
 # [10] "UMA"                        "MON ratio"                  "PLT"                       
-# [13] "LY"                         "LAP"                        "TyG index"                 
+# [13] "LY"                         "LAP"                        "TyG"                 
 # [16] "Hypertension"               "Diabetic Nephropathy"       "Smoke"                     
 # [19] "Drink"                      "Exercise"                   "Family History of Diabetes"
 # [22] "Central Obesity"            "Poor Lipid Control"  
@@ -92,9 +92,10 @@ library(forestplot) # version 3.1.6
 library(MASS)       # version 7.3-58.2
 
 # Fit stepwise backward logistic regression
-formula_CCA <- CCA_thicken ~ Age + `Disease Duration` + BMI + `CA19-9` + HbA1c + HDL + LDL + GFR + UMA +
-  `MON ratio` +  PLT + LY + LAP +  `Diabetic Nephropathy` + Smoke + Drink + Exercise +
-  `Family History of Diabetes` +  `Central Obesity` + `Poor Lipid Control` 
+formula_CCA <- CCA_thicken ~ Age + `Disease Duration` + BMI + `CA19-9` + HbA1c + 
+  HDL + LDL + GFR + UMA + `MON ratio` +  PLT + 
+  LY + LAP + TyG + `Hypertension` + `Diabetic Nephropathy` + Smoke + 
+  Drink +   Exercise +  `Family History of Diabetes` +  `Central Obesity` + `Poor Lipid Control`
 fit_CCA <- glm(formula_CCA, data = train_data, family = binomial())
 backward_model <- stepAIC(fit_CCA, direction = "backward")
 
@@ -105,16 +106,16 @@ results_CCA <- tidy(backward_model, conf.int = TRUE) %>%
     OR = round(exp(estimate), 3),
     CI_95_Lower = round(exp(conf.low), 3),
     CI_95_Upper = round(exp(conf.high), 3),
-    p_value = ifelse(p.value < 0.001, "<0.001", round(p.value, 3)))
-  # ) %>%
-  # select(
-  #   Predictor = term,
-  #   Beta = estimate,
-  #   OR,
-  #   CI_95_Lower,
-  #   CI_95_Upper,
-  #   p_value
-  # )
+    p_value = ifelse(p.value < 0.001, "<0.001", round(p.value, 3))
+    ) %>%
+  dplyr::select(
+    Predictor = term,
+    Beta = estimate,
+    OR,
+    CI_95_Lower,
+    CI_95_Upper,
+    p_value
+  )
 
 # Save results
 print(results_CCA)
@@ -123,6 +124,6 @@ write.csv(results_CCA, "backward_logistic_regression_results_CCA.csv", row.names
 # Retain variables with p < 0.05
 p_values <- summary(backward_model)$coefficients[, 4]
 significant_vars <- names(p_values[p_values < 0.05 & names(p_values) != "(Intercept)"])
-significant_vars <- unique(gsub("\\d+", "", significant_vars))
+# significant_vars <- unique(gsub("\\d+", "", significant_vars))
 print(significant_vars)
-# [1] "Age"      "BMI"      "HDL"      "LDL"      "LAP"      "Smoke"    "Exercise"
+# [1] "Age"      "BMI"     "HbA1c"     "HDL"      "LDL"      "TyG"      "Smoke"    "Exercise"
